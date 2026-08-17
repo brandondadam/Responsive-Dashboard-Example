@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>Dashboard POC</title>
+<link href="https://cdn.jsdelivr.net/npm/gridstack@10.3.1/dist/gridstack.min.css" rel="stylesheet"/>
+<link href="https://cdn.jsdelivr.net/npm/gridstack@10.3.1/dist/gridstack-extra.min.css" rel="stylesheet"/>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="app">
+
+  <div class="main">
+
+    <header class="topbar">
+      <div class="topbar__spacer"></div>
+      <button class="link-btn topbar__reopen" id="reopen-toolbar-btn" type="button" hidden>Customize Dashboard</button>
+      <div class="topbar__actions" id="topbar-actions">
+        <button class="link-btn" id="reset-layout-btn" type="button">Reset Layout</button>
+        <button class="btn btn--outline" id="add-widget-btn" type="button">Add Widgets</button>
+        <button class="btn btn--accent" id="save-changes-btn" type="button" disabled>Save Changes</button>
+        <button class="icon-btn" id="dismiss-toolbar-btn" type="button" aria-label="Close toolbar" title="Close">
+          <svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <main class="content">
+      <h1 class="greeting">Good morning</h1>
+
+      <div class="grid-stack"></div>
+    </main>
+  </div>
+</div>
+
+<dialog id="add-widget-dialog">
+  <form id="add-widget-form" method="dialog">
+    <h2>Add Widget</h2>
+
+    <label class="field">
+      <span class="field__label">Title</span>
+      <input type="text" name="title" id="widget-title-input" placeholder="Widget title" required>
+    </label>
+
+    <label class="field">
+      <span class="field__label">Type</span>
+      <select name="type" id="widget-type-input">
+        <option value="lines">Lines</option>
+        <option value="chart">Chart</option>
+        <option value="image">Image</option>
+        <option value="list">List</option>
+        <option value="stat">Stat</option>
+      </select>
+    </label>
+
+    <div class="dialog__actions">
+      <button type="button" id="add-widget-cancel" class="btn btn--ghost">Cancel</button>
+      <button type="submit" id="add-widget-submit" class="btn btn--primary">Add</button>
+    </div>
+  </form>
+</dialog>
+
+<script src="https://cdn.jsdelivr.net/npm/gridstack@10.3.1/dist/gridstack-all.js"></script>
+<script src="app.js" defer></script>
+</body>
+</html>
