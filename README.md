@@ -1,4 +1,4 @@
-# Responsive Grid Example
+# Responsive Dashboard Example
 
 A small proof-of-concept dashboard demonstrating a responsive, drag-and-drop widget grid built with [GridStack.js](https://gridstackjs.com/) (v10.3.1, loaded via CDN — no build step or dependencies required).
 
