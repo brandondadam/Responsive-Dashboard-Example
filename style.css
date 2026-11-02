@@ -19,6 +19,13 @@
   --red-600: #dc2626;
 
   --radius: 8px;
+  --widget-radius: 4px;
+  --widget-surface: #1f1f1e;
+  --widget-surface-raised: #2b2b2a;
+  --widget-border: #3a3a39;
+  --widget-foreground: #e5e5e2;
+  --widget-muted: #a3a3a0;
+  --widget-tag: rgba(43, 43, 42, 0.6);
 }
 
 * {
@@ -230,13 +237,20 @@ svg {
   height: 100%;
   display: flex;
   flex-direction: column;
+  background: var(--widget-surface);
 }
 
 .hero-card__image {
   position: relative;
   flex: 1;
   min-height: 48px;
-  background: linear-gradient(160deg, #cfd9e6 0%, #aab8cc 45%, #8b9bb3 75%, #6e7f99 100%);
+  background: linear-gradient(
+    160deg,
+    var(--widget-surface) 0%,
+    var(--widget-surface-raised) 45%,
+    var(--widget-border) 75%,
+    var(--gray-700) 100%
+  );
   display: flex;
   align-items: flex-end;
   padding: 14px;
@@ -250,7 +264,7 @@ svg {
 }
 
 .hero-card__tag-label {
-  color: #fff;
+  color: var(--widget-foreground);
   font-size: 0.78rem;
   font-weight: 600;
   margin-right: 4px;
@@ -258,8 +272,8 @@ svg {
 }
 
 .hero-card__tag {
-  background: rgba(20, 24, 32, 0.6);
-  color: #fff;
+  background: var(--widget-tag);
+  color: var(--widget-foreground);
   font-size: 0.8rem;
   font-weight: 500;
   padding: 6px 12px;
@@ -272,11 +286,12 @@ svg {
   align-items: center;
   gap: 10px;
   padding: 14px 16px;
-  color: var(--gray-500);
+  background: var(--widget-surface);
+  color: var(--widget-muted);
 }
 
 .hero-card__search svg {
-  color: var(--gray-500);
+  color: var(--widget-muted);
 }
 
 .hero-card__search input {
@@ -284,9 +299,14 @@ svg {
   border: none;
   outline: none;
   font-size: 0.95rem;
-  color: var(--gray-900);
+  color: var(--widget-muted);
   background: transparent;
   min-height: 24px;
+}
+
+.hero-card__search input::placeholder {
+  color: var(--widget-muted);
+  opacity: 1;
 }
 
 /* ---------- Quick actions ---------- */
@@ -308,8 +328,8 @@ svg {
 
 .quick-action {
   appearance: none;
-  border: 1px solid var(--gray-300);
-  background: var(--gray-50);
+  border: 1px solid var(--widget-border);
+  background: var(--widget-surface-raised);
   border-radius: var(--radius);
   display: flex;
   flex-direction: column;
@@ -318,7 +338,7 @@ svg {
   gap: 10px;
   padding: 14px 10px;
   cursor: pointer;
-  color: var(--gray-900);
+  color: var(--widget-foreground);
   font-size: 0.82rem;
   font-weight: 600;
   text-align: center;
@@ -329,12 +349,12 @@ svg {
 .quick-action svg {
   width: 24px;
   height: 24px;
-  color: var(--gray-800);
+  color: var(--widget-foreground);
 }
 
 .quick-action:hover {
-  background: var(--gray-100);
-  border-color: var(--gray-400);
+  background: var(--widget-border);
+  border-color: var(--widget-muted);
 }
 
 .quick-action--more-wrap {
@@ -342,7 +362,7 @@ svg {
 }
 
 .quick-action--more {
-  color: var(--gray-500);
+  color: var(--widget-foreground);
   width: 100%;
   height: 100%;
 }
@@ -400,9 +420,9 @@ svg {
 .grid-stack-item-content {
   display: flex !important;
   flex-direction: column;
-  background: var(--gray-50);
-  border: 1px solid var(--gray-300);
-  border-radius: var(--radius);
+  background: var(--widget-surface);
+  border: 1px solid var(--widget-border);
+  border-radius: var(--widget-radius);
   overflow: hidden;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
@@ -412,12 +432,12 @@ svg {
   align-items: center;
   gap: 8px;
   padding: 14px 14px 10px;
-  background: var(--gray-50);
+  background: var(--widget-surface);
   cursor: move;
 }
 
 .widget__header svg {
-  color: var(--gray-900);
+  color: var(--widget-foreground);
   width: 17px;
   height: 17px;
 }
@@ -428,7 +448,7 @@ svg {
   min-width: 0;
   font-size: 0.92rem;
   font-weight: 700;
-  color: var(--gray-900);
+  color: var(--widget-foreground);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -440,8 +460,8 @@ svg {
 }
 
 .widget__title:focus {
-  background: var(--gray-100);
-  box-shadow: 0 0 0 2px var(--gray-400);
+  background: var(--widget-surface-raised);
+  box-shadow: 0 0 0 2px var(--widget-muted);
   white-space: normal;
   overflow: visible;
   text-overflow: unset;
@@ -457,7 +477,7 @@ svg {
   appearance: none;
   border: none;
   background: transparent;
-  color: var(--gray-500);
+  color: var(--widget-muted);
   width: 28px;
   height: 28px;
   min-height: 0;
@@ -476,8 +496,8 @@ svg {
 }
 
 .widget__cycle:hover {
-  background: var(--gray-200);
-  color: var(--gray-800);
+  background: var(--widget-surface-raised);
+  color: var(--widget-foreground);
 }
 
 .widget__remove {
@@ -496,6 +516,7 @@ svg {
   display: flex;
   flex-direction: column;
   gap: 8px;
+  background: var(--widget-surface);
 }
 
 /* ---------- Wireframe placeholder patterns ---------- */
@@ -507,7 +528,7 @@ svg {
 .wf-lines .wf-bar {
   height: 8px;
   border-radius: 4px;
-  background: var(--gray-200);
+  background: var(--widget-surface-raised);
 }
 .wf-lines .wf-bar:nth-child(1) { width: 90%; }
 .wf-lines .wf-bar:nth-child(2) { width: 75%; }
@@ -521,7 +542,7 @@ svg {
 }
 .wf-chart .wf-col {
   flex: 1;
-  background: var(--gray-200);
+  background: var(--widget-surface-raised);
   border-radius: 3px 3px 0 0;
 }
 
@@ -533,13 +554,13 @@ svg {
   width: 100%;
   height: 100%;
   min-height: 40px;
-  border: 2px dashed var(--gray-300);
+  border: 2px dashed var(--widget-border);
   border-radius: 6px;
   display: flex;
   align-items: center;
   justify-content: center;
   position: relative;
-  background: var(--gray-100);
+  background: var(--widget-surface-raised);
 }
 .wf-image .wf-frame::before {
   content: "";
@@ -547,7 +568,7 @@ svg {
   height: 36%;
   max-width: 40px;
   max-height: 40px;
-  background: var(--gray-300);
+  background: var(--widget-surface-raised);
   clip-path: polygon(0% 100%, 30% 55%, 50% 75%, 70% 40%, 100% 80%, 100% 100%);
 }
 
@@ -563,14 +584,14 @@ svg {
   width: 18px;
   height: 18px;
   border-radius: 50%;
-  background: var(--gray-200);
+  background: var(--widget-surface-raised);
   flex-shrink: 0;
 }
 .wf-list .wf-row-line {
   flex: 1;
   height: 8px;
   border-radius: 4px;
-  background: var(--gray-200);
+  background: var(--widget-surface-raised);
 }
 
 .wf-stat {
@@ -581,13 +602,13 @@ svg {
   width: 55%;
   height: 26px;
   border-radius: 6px;
-  background: var(--gray-300);
+  background: var(--widget-surface-raised);
 }
 .wf-stat .wf-small {
   width: 35%;
   height: 8px;
   border-radius: 4px;
-  background: var(--gray-200);
+  background: var(--widget-surface-raised);
 }
 
 /* ---------- Dialog ---------- */
