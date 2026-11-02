@@ -18,6 +18,13 @@
       <div class="topbar__spacer"></div>
       <button class="link-btn topbar__reopen" id="reopen-toolbar-btn" type="button" hidden>Customize Dashboard</button>
       <div class="topbar__actions" id="topbar-actions">
+        <label class="layout-mode" title="How saved layouts behave across screen sizes">
+          <span class="layout-mode__label">Layout</span>
+          <select class="layout-mode__select" id="layout-mode-input">
+            <option value="desktop-master">Desktop master</option>
+            <option value="per-size">Remember each size</option>
+          </select>
+        </label>
         <button class="link-btn" id="reset-layout-btn" type="button">Reset Layout</button>
         <button class="btn btn--outline" id="add-widget-btn" type="button">Add Widgets</button>
         <button class="btn btn--accent" id="save-changes-btn" type="button" disabled>Save Changes</button>

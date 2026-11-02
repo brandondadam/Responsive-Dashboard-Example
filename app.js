@@ -2,6 +2,10 @@
   'use strict';
 
   var STORAGE_KEY = 'dashboard-widgets';
+  var STORAGE_VERSION = 2;
+  var BASE_COLUMN = 12; // canonical column count (desktop); smaller counts are overrides
+  var MODE_DESKTOP_MASTER = 'desktop-master';
+  var MODE_PER_SIZE = 'per-size';
   var WIDGET_TYPES = ['lines', 'chart', 'image', 'list', 'stat'];
 
   var TYPE_ICONS = {
@@ -25,10 +29,14 @@
   var ACTIONS_ICON = '<path d="M13 2L4 14h6l-1 8 9-12h-6l1-8z"/>';
   var SEARCH_ICON = '<circle cx="10.5" cy="10.5" r="6.5"/><path d="M20 20l-4.5-4.5"/>';
 
-  var widgets = []; // source-of-truth model: {id, title, type, x, y, w, h}
+  var widgets = []; // metadata model, shared across sizes: {id, title, type}
+  var layouts = {}; // geometry by column count: { 12: {id: {x,y,w,h}}, 4: {...}, ... }
+  var mode = MODE_DESKTOP_MASTER;
+  var currentColumn = BASE_COLUMN; // active GridStack column count
   var grid;
   var dirty = false;
   var saveBtn;
+  var modeSelect;
   var quickActionsObservers = {}; // widget id -> ResizeObserver, for 'actions'-type widgets
 
   function uid() {
@@ -216,30 +224,85 @@
     return widgets.find(function (w) { return w.id === id; });
   }
 
+  // The canonical (desktop) geometry map, always present.
+  function baseLayout() {
+    return layouts[BASE_COLUMN] || (layouts[BASE_COLUMN] = {});
+  }
+
+  // Geometry for a widget at a given column: the column's own override if it has
+  // one, otherwise the canonical base geometry.
+  function geomFor(id, column) {
+    var byCol = layouts[column];
+    if (byCol && byCol[id]) return byCol[id];
+    return baseLayout()[id];
+  }
+
   function setDirty(value) {
     dirty = value;
     if (saveBtn) saveBtn.disabled = !dirty;
   }
 
   function persist() {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(widgets));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({
+      version: STORAGE_VERSION,
+      mode: mode,
+      widgets: widgets,
+      layouts: layouts
+    }));
     setDirty(false);
   }
 
+  // Returns { widgets, layouts, mode } or null. Migrates the legacy format
+  // (a bare array of {id,title,type,x,y,w,h}) into the new split shape.
   function loadFromStorage() {
     var raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return null;
     try {
       var parsed = JSON.parse(raw);
-      if (Array.isArray(parsed) && parsed.length) return parsed;
+
+      // Legacy format: a plain array of combined metadata + geometry.
+      if (Array.isArray(parsed)) {
+        if (!parsed.length) return null;
+        return normalizeState(parsed.map(function (w) {
+          return { id: w.id, title: w.title, type: w.type };
+        }), { 12: arrayToGeometry(parsed) }, MODE_DESKTOP_MASTER);
+      }
+
+      // Current format.
+      if (parsed && Array.isArray(parsed.widgets) && parsed.widgets.length) {
+        return normalizeState(parsed.widgets, parsed.layouts, parsed.mode);
+      }
     } catch (e) {
       /* ignore corrupt storage */
     }
     return null;
   }
 
-  function defaultWidgets() {
-    return [
+  function arrayToGeometry(list) {
+    var geo = {};
+    list.forEach(function (w) {
+      geo[w.id] = { x: w.x, y: w.y, w: w.w, h: w.h };
+    });
+    return geo;
+  }
+
+  // Ensure a loaded state is well-formed: a base layout exists for every widget.
+  function normalizeState(widgetList, layoutMap, loadedMode) {
+    var normLayouts = layoutMap && typeof layoutMap === 'object' ? layoutMap : {};
+    if (!normLayouts[BASE_COLUMN]) normLayouts[BASE_COLUMN] = {};
+    var base = normLayouts[BASE_COLUMN];
+    // Drop any widget that has no base geometry we can place.
+    var validWidgets = widgetList.filter(function (w) { return base[w.id]; });
+    return {
+      widgets: validWidgets,
+      layouts: normLayouts,
+      mode: loadedMode === MODE_PER_SIZE ? MODE_PER_SIZE : MODE_DESKTOP_MASTER
+    };
+  }
+
+  function defaultState() {
+    // metadata + canonical 12-column geometry
+    var defs = [
       // wide left column: hero search, then two large content cards stacked below it
       { id: uid(), title: 'Search', type: 'search', x: 0, y: 0, w: 8, h: 5 },
       { id: uid(), title: 'Summary', type: 'lines', x: 0, y: 5, w: 8, h: 4 },
@@ -250,26 +313,92 @@
       { id: uid(), title: 'Overview', type: 'stat', x: 8, y: 5, w: 4, h: 3 },
       { id: uid(), title: 'Recent Activity', type: 'list', x: 8, y: 8, w: 4, h: 4 }
     ];
+    return {
+      widgets: defs.map(function (w) { return { id: w.id, title: w.title, type: w.type }; }),
+      layouts: { 12: arrayToGeometry(defs) },
+      mode: MODE_DESKTOP_MASTER
+    };
   }
 
-  function renderAll(list) {
+  // Render the whole grid from the canonical base geometry, then let GridStack
+  // reflow to the current breakpoint. In per-size mode, any saved override for
+  // the settled column is applied afterward (see applyOverrideForColumn).
+  function renderAll(state) {
     Object.keys(quickActionsObservers).forEach(teardownQuickActionsWidget);
-    widgets = list;
+    widgets = state.widgets;
+    layouts = state.layouts;
+    mode = state.mode;
+    if (modeSelect) modeSelect.value = mode;
+
+    var base = baseLayout();
     grid.removeAll();
     grid.batchUpdate();
     widgets.forEach(function (w) {
-      grid.addWidget({ id: w.id, x: w.x, y: w.y, w: w.w, h: w.h, content: renderWidgetHTML(w) });
+      var g = base[w.id] || { x: 0, y: 0, w: 3, h: 2 };
+      grid.addWidget({ id: w.id, x: g.x, y: g.y, w: g.w, h: g.h, content: renderWidgetHTML(w) });
     });
     grid.commit();
     widgets.forEach(function (w) {
       if (w.type === 'actions') initQuickActionsWidget(w.id);
     });
+
+    currentColumn = grid.getColumn();
+    applyOverrideForColumn(currentColumn);
+  }
+
+  function nodeEl(id) {
+    var n = grid.engine.nodes.find(function (node) { return node.id === id; });
+    return n && n.el;
+  }
+
+  function applyGeometry(byCol) {
+    grid.batchUpdate();
+    widgets.forEach(function (w) {
+      var g = byCol[w.id];
+      var el = g && nodeEl(w.id);
+      if (el) grid.update(el, { x: g.x, y: g.y, w: g.w, h: g.h });
+    });
+    grid.commit();
+  }
+
+  // Reconcile the live grid with the stored geometry for `column`.
+  //  - Base (desktop) column: always re-assert the canonical layout, so desktop
+  //    always reflects exactly what was saved there (regardless of mode or any
+  //    GridStack re-flow cache drift).
+  //  - Smaller column, per-size mode with a saved override: apply that override.
+  //  - Smaller column otherwise (desktop-master, or per-size with no override):
+  //    leave GridStack's automatic re-flow in place.
+  function applyOverrideForColumn(column) {
+    if (column === BASE_COLUMN) {
+      applyGeometry(baseLayout());
+    } else if (mode === MODE_PER_SIZE && layouts[column]) {
+      applyGeometry(layouts[column]);
+    }
+  }
+
+  // Record live node geometry into the model after a user drag/resize.
+  // Desktop-master only persists edits made at the base column; per-size records
+  // into whichever column is active.
+  function captureUserEdit() {
+    if (mode === MODE_DESKTOP_MASTER && currentColumn !== BASE_COLUMN) return;
+    var target = currentColumn === BASE_COLUMN
+      ? baseLayout()
+      : (layouts[currentColumn] || (layouts[currentColumn] = {}));
+    grid.engine.nodes.forEach(function (n) {
+      if (!n.id) return;
+      target[n.id] = { x: n.x, y: n.y, w: n.w, h: n.h };
+    });
+    setDirty(true);
   }
 
   function addWidget(title, type) {
-    var widget = { id: uid(), title: title, type: type, x: 0, y: 0, w: 3, h: 2 };
+    var widget = { id: uid(), title: title, type: type };
+    var geom = { x: 0, y: 0, w: 3, h: 2 };
     widgets.push(widget);
-    grid.addWidget({ id: widget.id, w: widget.w, h: widget.h, content: renderWidgetHTML(widget) });
+    baseLayout()[widget.id] = { x: geom.x, y: geom.y, w: geom.w, h: geom.h };
+    grid.addWidget({ id: widget.id, w: geom.w, h: geom.h, content: renderWidgetHTML(widget) });
+    // record the placement GridStack actually chose for the active column
+    captureUserEdit();
     if (widget.type === 'actions') initQuickActionsWidget(widget.id);
     setDirty(true);
   }
@@ -277,6 +406,7 @@
   function removeWidget(id, el) {
     grid.removeWidget(el);
     widgets = widgets.filter(function (w) { return w.id !== id; });
+    Object.keys(layouts).forEach(function (col) { delete layouts[col][id]; });
     teardownQuickActionsWidget(id);
     setDirty(true);
   }
@@ -323,9 +453,10 @@
     var titleInput = document.getElementById('widget-title-input');
     var typeInput = document.getElementById('widget-type-input');
     saveBtn = document.getElementById('save-changes-btn');
+    modeSelect = document.getElementById('layout-mode-input');
 
     // ---- initial layout ----
-    renderAll(loadFromStorage() || defaultWidgets());
+    renderAll(loadFromStorage() || defaultState());
     setDirty(false);
 
     // ---- add widget dialog ----
@@ -352,9 +483,21 @@
 
     document.getElementById('reset-layout-btn').addEventListener('click', function () {
       localStorage.removeItem(STORAGE_KEY);
-      renderAll(defaultWidgets());
+      renderAll(defaultState());
       setDirty(false);
     });
+
+    // ---- layout mode toggle ----
+    if (modeSelect) {
+      modeSelect.value = mode;
+      modeSelect.addEventListener('change', function () {
+        mode = modeSelect.value === MODE_PER_SIZE ? MODE_PER_SIZE : MODE_DESKTOP_MASTER;
+        // Rebuild from the canonical layout and reflow, so switching away from
+        // per-size cleanly drops any override that was showing for this column.
+        renderAll({ widgets: widgets, layouts: layouts, mode: mode });
+        persist(); // the mode is a global setting; save it right away
+      });
+    }
 
     // ---- widget interactions (remove / cycle type / edit title) ----
     gridEl.addEventListener('click', function (e) {
@@ -388,20 +531,21 @@
       }
     });
 
-    // ---- keep model in sync with drag/resize ----
-    grid.on('change', function (event, items) {
-      (items || []).forEach(function (item) {
-        var id = item.id || (item.el && item.el.getAttribute('gs-id'));
-        var widget = findWidget(id);
-        if (widget) {
-          widget.x = item.x;
-          widget.y = item.y;
-          widget.w = item.w;
-          widget.h = item.h;
-        }
-      });
-      setDirty(true);
+    // ---- detect breakpoint re-flows (NOT user edits) ----
+    // `change` fires for both user gestures and automatic column re-flows. We
+    // use it only to notice when the column count changes so we can re-apply the
+    // right stored layout. Re-flows must never mark the layout dirty, or merely
+    // resizing the browser would corrupt the saved model.
+    grid.on('change', function () {
+      var col = grid.getColumn();
+      if (col === currentColumn) return; // same column: user gesture, handled below
+      currentColumn = col;
+      applyOverrideForColumn(col);
     });
+
+    // ---- capture genuine user edits (pointer gestures only) ----
+    grid.on('dragstop', captureUserEdit);
+    grid.on('resizestop', captureUserEdit);
 
     // ---- collapse/reopen toolbar ----
     var topbarActions = document.getElementById('topbar-actions');

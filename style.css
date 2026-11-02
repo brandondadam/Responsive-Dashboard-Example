@@ -85,6 +85,37 @@ svg {
   display: none;
 }
 
+.layout-mode {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--gray-700);
+}
+
+.layout-mode__label {
+  font-weight: 500;
+}
+
+.layout-mode__select {
+  appearance: none;
+  border: 1px solid var(--gray-400);
+  background: var(--gray-50);
+  color: var(--gray-900);
+  border-radius: var(--radius);
+  padding: 6px 26px 6px 10px;
+  font-size: 13px;
+  cursor: pointer;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23545452' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 7px center;
+  background-size: 14px;
+}
+
+.layout-mode__select:hover {
+  background-color: var(--gray-200);
+}
+
 .icon-btn {
   appearance: none;
   border: none;

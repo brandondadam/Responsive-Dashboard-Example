@@ -11,6 +11,9 @@ Open `index.html` in a browser to try it out.
 - Add / remove / cycle widget type
 - Editable widget titles
 - Layout persistence to `localStorage`, with a "Reset Layout" option
+- Two selectable **layout modes** that control how saved layouts behave across screen sizes:
+  - **Desktop master** — the 12-column desktop arrangement is the single saved layout; smaller screens always auto-reflow from it
+  - **Remember each size** — each breakpoint (phone / tablet / desktop) keeps its own saved arrangement
 
 ## GridStack APIs used
 
@@ -27,7 +30,13 @@ The grid logic lives in `app.js`. It uses the following GridStack APIs:
 - **`grid.addWidget(options)`** — adds a new widget (with position, size, and HTML content) to the grid
 - **`grid.removeWidget(el)`** — removes a single widget's DOM element from the grid
 - **`grid.removeAll()`** — clears all widgets before re-rendering
-- **`grid.on('change', callback)`** — listens for drag/resize events and syncs the in-memory widget model (position/size) so it can be persisted to `localStorage`
+- **`grid.on('change', callback)`** — used purely to detect breakpoint re-flows (when GridStack changes the column count) so the correct per-size layout can be re-applied; it deliberately does **not** persist geometry, because `change` also fires on automatic re-flows
+- **`grid.on('dragstop' / 'resizestop', callback)`** — fire only on real pointer gestures, so these are used to capture genuine user edits into the in-memory model and mark it dirty for `localStorage`
+- **`grid.getColumn()`** — reads the active column count to key geometry per breakpoint and to tell re-flows apart from user edits
+
+### Layout persistence model
+
+Stored state separates widget **metadata** (`id`, `title`, `type`) from **geometry** keyed by column count (`{ 12: {…}, 4: {…}, 2: {…}, 1: {…} }`). The 12-column entry is the canonical desktop layout; smaller entries are optional per-size overrides created only when the user edits at that size. Older single-array saves are migrated automatically on load.
 
 ## Files
 
