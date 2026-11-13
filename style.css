@@ -17,6 +17,8 @@
   --amber-600: #ca9a04;
   --red-500: #ef4444;
   --red-600: #dc2626;
+  --teal-500: #1AC69E;
+  --white: #FFF;
 
   --radius: 8px;
 }
@@ -250,7 +252,7 @@ svg {
 }
 
 .hero-card__tag-label {
-  color: #fff;
+  color: var(--white);
   font-size: 0.78rem;
   font-weight: 600;
   margin-right: 4px;
@@ -259,7 +261,7 @@ svg {
 
 .hero-card__tag {
   background: rgba(20, 24, 32, 0.6);
-  color: #fff;
+  color: var(--white);
   font-size: 0.8rem;
   font-weight: 500;
   padding: 6px 12px;
@@ -521,7 +523,7 @@ svg {
 }
 .wf-chart .wf-col {
   flex: 1;
-  background: var(--gray-200);
+  background: var(--teal-500);
   border-radius: 3px 3px 0 0;
 }
 
